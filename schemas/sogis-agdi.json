@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://git.sourcepole.ch/ktso/somap/-/raw/master/docs/schemas/sogis-agdi.json",
+  "title": "SO!GIS AGDI",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "title": "JSON Schema",
+      "description": "Reference to JSON schema of this config",
+      "type": "string",
+      "format": "uri",
+      "default": "https://git.sourcepole.ch/ktso/somap/-/raw/master/docs/schemas/sogis-agdi.json"
+    },
+    "service": {
+      "title": "Service name",
+      "type": "string",
+      "const": "agdi"
+    },
+    "config": {
+      "title": "Config options",
+      "type": "object",
+      "properties": {
+        "db_url": {
+          "description": "Connection URL for configuration database. Example: postgresql:///?service=soconfig_services",
+          "type": "string"
+        },
+        "project_output_dir": {
+          "description": "Storage directory for uploaded QMLs and QPTs. Example: /qgs-resources/",
+          "type": "string"
+        },
+        "jasper_reports_dir": {
+          "description": "Storage directory for uploaded Jasper reports. Example: /jasper/reports",
+          "type": "string"
+        },
+        "jasper_service_url": {
+          "description": "Jasper Reporting service URL for generating reports. Example: http://sogis-jasper-reporting-service:8080/reports",
+          "type": "string",
+          "format": "uri"
+        },
+        "jasper_timeout": {
+          "description": "Timeout in seconds for requests forwarded to Jasper Reporting service. Example: 60",
+          "type": "integer"
+        },
+        "config_generator_url": {
+          "description": "Magic button URL to run config generator. Example: http://sogis-config-generator/",
+          "type": "string",
+          "format": "uri"
+        },
+        "solr_update_url": {
+          "description": "URL to initiate update of Solr Metadata index. Example: http://sogis-solr:8983/solr/gdi/dih_metadata?command=status",
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "db_url",
+        "project_output_dir",
+        "jasper_reports_dir",
+        "jasper_service_url",
+        "config_generator_url",
+        "solr_update_url"
+      ]
+    }
+  },
+  "required": [
+    "service",
+    "config"
+  ]
+}
