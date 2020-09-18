@@ -1,0 +1,83 @@
+{% extends "base_index.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    // update map_order field in order of map table rows
+    var updateMapOrderField = function() {
+      var map_order = $('.map-order').map(function() {
+        return $(this).data('map_id');
+      }).get();
+      $('input[name="map_order"]').val(map_order);
+    };
+
+    $('button.move-order-down').click(function() {
+      // move sublayer down
+      var rowEl = $(this).closest('tr');
+      rowEl.insertAfter(rowEl.next());
+      updateMapOrderField();
+    });
+
+    $('button.move-order-up').click(function() {
+      // move sublayer up
+      var rowEl = $(this).closest('tr');
+      rowEl.insertBefore(rowEl.prev());
+      updateMapOrderField();
+    });
+
+    // initialize
+    updateMapOrderField();
+  });
+</script>
+<style type="text/css">
+<!--
+  {# hide top and bottom reorder buttons using CSS #}
+  tbody tr:first-child button.move-order-up {
+    visibility: hidden;
+  }
+  tbody tr:last-child button.move-order-down {
+    visibility: hidden;
+  }
+-->
+</style>
+{% endblock %}
+
+{% block title %}Maps{% endblock %}
+
+{% block buttons %}
+  <a href="{{ url_for('new_%s' % endpoint_suffix) }}" class="btn btn-success" role="button">
+    {{ utils.icon('plus') }} Neue Map
+  </a>
+
+  <form action="{{ url_for('map_order') }}" method="post" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="map_order" value=""/>
+    <button type="submit" class="btn btn-primary">
+      {{ utils.icon('sort-by-attributes') }} Reihenfolge speichern
+    </button>
+  </form>
+{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+  <th>Titel</th>
+  <th>Reihenfolge</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.gdi_oid }}</td>
+  <td>{{ resource.name }}</td>
+  <td>{{ resource.title }}</td>
+  <td class='map-order' data-map_id="{{ resource[pkey] }}">
+    <button type="button" class="btn btn-default btn-sm move-order-down">
+      <span class="glyphicon glyphicon-chevron-down"></span>
+    </button>
+    <button type="button" class="btn btn-default btn-sm move-order-up">
+      <span class="glyphicon glyphicon-chevron-up"></span>
+    </button>
+  </td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}Map entfernen?{% endblock %}

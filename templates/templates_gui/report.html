@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+  <h2>{{ template_name }}</h2>
+
+  <form class="form form-horizontal" action="{{ action }}" target="_blank">
+    <div class="form-group">
+      <label class="control-label col-sm-2" for="name">Format</label>
+      <div class="col-sm-5">
+        <input id="format" name="format" value="pdf" type="text" class="form-control">
+      </div>
+    </div>
+
+    <hr>
+
+    {% for field in fields %}
+      <div class="form-group">
+        <label class="control-label col-sm-2" for="name">{{ field['name'] }}</label>
+        <div class="col-sm-5">
+          <input id="{{ field['name'] }}" name="{{ field['name'] }}" value="{{ field['default_value'] if field['default_value'] }}" type="{{ field['type'] }}" class="form-control">
+          {% if field['description'] %}
+            <p class="help-block">{{ field['description'] }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+
+    <input id="submit" value="Report erzeugen" type="submit" class="col-sm-offset-2 btn btn-primary">
+  </form>
+{% endblock %}

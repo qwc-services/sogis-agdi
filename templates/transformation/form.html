@@ -1,0 +1,101 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    $('table').on('click', 'button.remove-item', function() {
+      // remove item
+      $(this).closest('tr').remove();
+    });
+
+    var nextDataSetIndex = {{ form.data_sets.last_index + 1 }};
+
+    $('#add_data_set_btn').click(function() {
+      // get selected source data set
+      var option = $('#source_data_set').find('option:selected');
+      var dataSetId = option.val();
+      var dataSetName = option.text();
+
+      if (dataSetId === '') {
+        // skip empty selection
+        return;
+      }
+
+      // index for new data set field
+      var i = nextDataSetIndex;
+      nextDataSetIndex += 1;
+
+      // add row
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="data_sets-' + i + '-data_set_id" name="data_sets-' + i + '-data_set_id" value="' + dataSetId + '" type="hidden">';
+      html +=     '<input id="data_sets-' + i + '-data_set_name" name="data_sets-' + i + '-data_set_name" value="' + dataSetName + '" type="hidden">';
+      html +=     dataSetName;
+      html +=   '</td>';
+      html +=   '<td><button class="btn btn-danger remove-item" type="button">Entfernen</button></td>';
+      html += '</tr>';
+
+      $('#add_data_set_row').before(html);
+    });
+  });
+</script>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.target_data_set, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    <div class="form-group field field-jasper {% if form.data_sets.errors %} has-error{% endif -%}">
+      <label class="control-label col-sm-2">Verwendete DataSets</label>
+      <div class="col-sm-5">
+        <table id="sub_layers_table"  class="table table-striped">
+          <thead>
+            <tr>
+              <th>DataSet</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for data_set in form.data_sets.entries %}
+            <tr>
+              <td>
+                {{ data_set.data_set_id }}
+                {{ data_set.data_set_name }}
+                {{ data_set.data_set_name.data }}
+              </td>
+              <td><button class='btn btn-danger remove-item' type="button">Entfernen</button></td>
+            </tr>
+          {% endfor %}
+          {% if form.source_data_set.choices %}
+            <tr id="add_data_set_row">
+              <td>
+                {{ form.source_data_set(class='form-control') }}
+                {%- if form.data_sets.errors %}
+                  {%- for error in form.data_sets.errors %}
+                    <p class="help-block">{{error}}</p>
+                  {%- endfor %}
+                {% endif %}
+              </td>
+              <td><button id='add_data_set_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

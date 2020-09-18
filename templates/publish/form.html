@@ -1,0 +1,58 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    $('#update').submit(function() {
+      // clear alerts
+      $('.flashed-messages').empty();
+      $('#db_alerts').empty();
+    });
+  });
+</script>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+
+  {% if qgs_writer_log is defined %}
+    <div id="db_alerts" class="row">
+      <div class="col-md-12">
+        {%
+          set levels = {
+            'info': 'info',
+            'warning': 'warning',
+            'error': 'danger'
+          }
+        %}
+        {% for log in qgs_writer_log %}
+          <div class="alert alert-{{levels.get(log['level'], 'info')}}" role="alert">
+            <div>
+              {% autoescape false %}
+                {{ log['msg'] | replace('\n', '<br/>') | replace(' ', '&nbsp;') }}
+              {% endautoescape %}
+              </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <h1>{{ title }}</h1>
+
+  <form id="update" class="form form-horizontal" action="{{ action }}" method="post">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {{ wtf.form_field(form.service_configs, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.wms_wfs, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% if form.meta.solr_url %}
+    {{ wtf.form_field(form.solr_index, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+    <button id="submit" type="submit" class="col-sm-offset-2 btn btn-warning">{{ utils.icon('refresh') }} Aktualisieren</button>
+  </form>
+{% endblock %}

@@ -1,0 +1,706 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    // toggle fields on type select
+    var toggleFields = function() {
+      // get selected type
+      var option = $('#connection_type').find('option:selected');
+      var type = option.val();
+
+      var isVector = (type == 'database');
+      var isRaster = (type == 'directory');
+      var isBasic = (type == 'basic_database');
+
+      // clear alerts
+      $('#db_alerts > div > div').remove();
+
+      if (!isRaster) {
+        // reset raster field values
+        $('#raster_data_source').val(0);
+        $('#raster_data_set').empty();
+      }
+      if (!isVector) {
+        // reset vector field values
+        $('#abstract').val('');
+        $('#data_source').val(0);
+        $('#db_table').empty();
+        $('#db_table_filter').val('');
+        $('#in_wfs').removeAttr('checked');
+        $('#permissions_table').find('.permission-write input').removeAttr('checked');
+
+        // remove primary key field
+        $('#primary_key').closest('.form-group').remove();
+        // remove geometry column select
+        $('#geom_column').closest('.form-group').remove();
+        // clear attributes table
+        $('#attrs_table tbody tr').remove();
+      }
+      if (!isBasic) {
+        // title required
+        $('#title').attr('required', '');
+
+        // reset basic data set field values
+        $('#basic_data_source').val(0);
+        $('#basic_db_table').empty();
+      }
+      else {
+        // title optional
+        $('#title').removeAttr('required');
+      }
+
+      // toggle vector fields
+      $('#data_source').closest('div.form-group').toggle(isVector);
+      $('#db_table').closest('div.form-group').toggle(isVector);
+      $('#db_table_filter').closest('div.form-group').toggle(isVector);
+      $('#in_wfs').closest('div.form-group').toggle(isVector);
+      $('#attrs_table').closest('div.form-group').toggle(isVector);
+      $('#permissions_table').find('.permission-write').toggle(isVector);
+
+      // toggle raster fields
+      $('#raster_data_source').closest('div.form-group').toggle(isRaster);
+      $('#raster_data_set').closest('div.form-group').toggle(isRaster);
+
+      // toggle vector and raster fields
+      $('#title').closest('div.form-group').toggle(!isBasic);
+      $('#synonyms').closest('div.form-group').toggle(!isBasic);
+      $('#abstract').closest('div.form-group').toggle(!isBasic);
+      $('#keywords').closest('div.form-group').toggle(!isBasic);
+      $('#in_wms').closest('div.form-group').toggle(!isBasic);
+      $('#in_wfs').closest('div.form-group').toggle(!isBasic);
+      $('#info_template').closest('div.form-group').toggle(!isBasic);
+      $('#object_sheet').closest('div.form-group').toggle(!isBasic);
+      $('#legend_file').closest('div.form-group').toggle(!isBasic);
+      $('#remove_legend').closest('div.form-group').toggle(!isBasic);
+      $('#qml_file').closest('div.form-group').toggle(!isBasic);
+      $('#remove_qml').closest('div.form-group').toggle(!isBasic);
+      $('#client_qml_file').closest('div.form-group').toggle(!isBasic);
+      $('#remove_client_qml').closest('div.form-group').toggle(!isBasic);
+      $('#transparency').closest('div.form-group').toggle(!isBasic);
+      $('#permissions_table').closest('div.form-group').toggle(!isBasic);
+
+      // toggle basic data set fields
+      $('#basic_data_source').closest('div.form-group').toggle(isBasic);
+      $('#basic_db_table').closest('div.form-group').toggle(isBasic);
+    };
+    $('#connection_type').change(toggleFields);
+
+    $('#data_source').change(function() {
+      // get selected data_source ID
+      var option = $('#data_source').find('option:selected');
+      var dataSourceId = option.val();
+
+      // clear alerts
+      $('#db_alerts > div > div').remove();
+      // clear tables
+      $('#db_table').empty();
+      // remove primary key field
+      $('#primary_key').closest('.form-group').remove();
+      // remove geometry column select
+      $('#geom_column').closest('.form-group').remove();
+      // clear attributes table
+      $('#attrs_table tbody tr').remove();
+
+      if (dataSourceId > 0) {
+        // load tables for selected data source
+        var request = $.ajax({
+          url: "{{ url_for('data_set_tables') }}",
+          data: {
+            data_source_id: dataSourceId
+          },
+          dataType: 'json',
+          context: this
+        }).done(function(data, status) {
+          // add empty option
+          $('#db_table').append('<option value=""></option>');
+
+          // add tables
+          for (var i=0; i<data.tables.length; i++) {
+            var table = data.tables[i];
+            $('#db_table').append('<option value="' + table + '">' + table + '</option>');
+          }
+
+          // apply filter
+          filterDbTables();
+        }).fail(function(jqXHR, status) {
+          var msg = jqXHR.statusText;
+          if (jqXHR.responseJSON) {
+            msg = jqXHR.responseJSON.error.replace(/\n/g, "<br/>").replace(/ /g, "&nbsp;");
+          }
+
+          var html = '';
+          html += '<div class="alert alert-danger" role="alert">';
+          html +=   '<strong>Fehler beim Laden der Tabellen:</strong><br/>';
+          html +=   '<div style="font-family: monospace">' + msg + '</div>';
+          html += '</div>';
+          $('#db_alerts > div').append(html);
+        });
+      }
+    });
+
+    $('#db_table').change(function() {
+      // get selected data_source ID
+      var dataSourceId = $('#data_source').find('option:selected').val();
+      // get selected db_table ID
+      var tableName = $('#db_table').find('option:selected').val();
+
+      // clear alerts
+      $('#db_alerts > div > div').remove();
+      // remove primary key field
+      $('#primary_key').closest('.form-group').remove();
+      // remove geometry column select
+      $('#geom_column').closest('.form-group').remove();
+      // clear attributes table
+      $('#attrs_table tbody tr').remove();
+
+      if (tableName.length > 0) {
+        // load metadata for selected table
+        var request = $.ajax({
+          url: "{{ url_for('data_set_metadata') }}",
+          data: {
+            data_source_id: dataSourceId,
+            table_name: tableName
+          },
+          dataType: 'json',
+          context: this
+        }).done(function(data, status) {
+          if (data.primary_key === null) {
+            // add primary key field if primary key unknown
+            var html = '';
+            html += '<div class="form-group">';
+            html +=   '<label class="control-label col-sm-2" for="primary_key">{{ form.primary_key.label }}</label>';
+            html +=   '<div class="col-sm-5">';
+            html +=     '<input class="form-control" id="primary_key" name="primary_key" type="text" value="">';
+            html +=   '</div>';
+            html += '</div>';
+
+            $('#db_table_filter').closest('.form-group').after(html);
+          }
+
+          if (data.geometry_columns.length > 1) {
+            // add geometry column select if there are multiple choices
+            var html = '';
+            html += '<div class="form-group ">';
+            html +=   '<label class="control-label  col-sm-2" for="geom_column">{{ form.geom_column.label }}</label>';
+            html +=   '<div class="col-sm-5">';
+            html +=     '<select class="form-control" id="geom_column" name="geom_column">';
+            for (var i=0; i<data.geometry_columns.length; i++) {
+              var col = data.geometry_columns[i];
+              html +=     '<option value="' + col.geometry_column + '">' + col.geometry_column + ' (' + col.geometry_type + ')</option>';
+            }
+            html +=     '</select>';
+            html +=   '</div>';
+            html += '</div>';
+
+            $('#db_table_filter').closest('.form-group').after(html);
+          }
+
+          // update attributes subform
+          var html = '';
+          for (var i=0; i<data.attributes.length; i++) {
+            var attr = data.attributes[i];
+
+            html += '<tr class="attr-row" data-attrid="attrs-' + i + '">';
+            html +=   '<td>';
+            html +=     '<input name="attrs-' + i + '-name" value="' + attr + '" type="hidden">';
+            html +=     '<input class="attr-order" id="attrs-' + i + '-attr_order" name="attrs-' + i + '-attr_order" required="" type="hidden" value="' + i + '">';
+            html +=     '<p class="form-control-static">' + attr + '</p>';
+            html +=   '</td>';
+            html +=   '<td><input class="form-control" id="attrs-' + i + '-alias" name="attrs-' + i + '-alias" value="" type="text"></td>';
+            html +=   '<td><input class="form-control" id="attrs-' + i + '-format" name="attrs-' + i + '-format" value="" type="text"></td>';
+            html +=   '<td><input class="checkbox" id="attrs-' + i + '-active" name="attrs-' + i + '-active" value="y" type="checkbox"></td>';
+            html +=   '<td><input class="checkbox" id="attrs-' + i + '-displayfield" name="attrs-' + i + '-displayfield" value="y" type="checkbox"></td>';
+            html +=   '<td>';
+            html +=     '<button type="button" class="btn btn-default btn-sm move-order-down">';
+            html +=       '<span class="glyphicon glyphicon-chevron-down"></span>';
+            html +=     '</button>';
+            html +=     '<button type="button" class="btn btn-default btn-sm move-order-up">';
+            html +=       '<span class="glyphicon glyphicon-chevron-up"></span>';
+            html +=     '</button>';
+            html +=   '</td>';
+            html +=   '<td>';
+            html +=     '<button type="button" class="btn btn-default btn-sm load-json-attrs" title="Feld als JSON auslesen" data-attr="' + attr + '">';
+            html +=       '<span class="glyphicon glyphicon-list-alt"></span>';
+            html +=     '</button>';
+            html +=   '</td>';
+            html += '</tr>';
+          }
+
+          $('#attrs_table tbody').html(html);
+
+          updateAttributeOrderFields();
+        }).fail(function(jqXHR, status) {
+          var msg = jqXHR.statusText;
+          if (jqXHR.responseJSON) {
+            msg = jqXHR.responseJSON.error.replace(/\n/g, "<br/>").replace(/ /g, "&nbsp;");
+          }
+
+          var html = '';
+          html += '<div class="alert alert-danger" role="alert">';
+          html +=   '<strong>Fehler beim Laden der Tabellen-Metadaten:</strong><br/>';
+          html +=   '<div style="font-family: monospace">' + msg + '</div>';
+          html += '</div>';
+          $('#db_alerts > div').append(html);
+        });
+      }
+    });
+
+    // apply filter to DB tables select
+    var filterDbTables = function() {
+      var filter = $('#db_table_filter').val();
+      $('#db_table > option').each(function() {
+        if ($(this).val() !== "") {
+          if (filter !== "") {
+            // show option if matching
+            $(this).toggle($(this).val().includes(filter));
+          }
+          else {
+            // show all
+            $(this).show();
+          }
+        }
+      });
+
+      if (filter !== "") {
+        // remove selection if hidden by filter
+        var option = $('#db_table').find('option:selected');
+        if (option && option.is(':hidden')) {
+          $('#db_table').val('').trigger('change');
+        }
+      }
+    };
+    $('#db_table_filter').on('change keyup', filterDbTables);
+    $('#clear_db_table_filter').click(function() {
+      // reset filter
+      $('#db_table_filter').val('').trigger('change');
+    });
+
+    $('#raster_data_source').change(function() {
+      // get selected data_source ID
+      var option = $('#raster_data_source').find('option:selected');
+      var dataSourceId = option.val();
+
+      // clear rasters
+      $('#raster_data_set').empty();
+
+      if (dataSourceId > 0) {
+        // load rasters for selected data source
+        var request = $.ajax({
+          url: "{{ url_for('data_set_rasters') }}",
+          data: {
+            data_source_id: dataSourceId
+          },
+          dataType: 'json',
+          context: this
+        }).done(function(data, status) {
+          // add empty option
+          $('#raster_data_set').append('<option value=""></option>');
+
+          // add rasters
+          for (var i=0; i<data.rasters.length; i++) {
+            var raster = data.rasters[i];
+            $('#raster_data_set').append('<option value="' + raster + '">' + raster + '</option>');
+          }
+        }).fail(function(jqXHR, status) {
+          alert("Fehler beim Laden der Rasterlayer\n" + jqXHR.status + ": " + jqXHR.statusText);
+        });
+      }
+    });
+
+    // update all attr_order fields in order of attribute table rows
+    var updateAttributeOrderFields = function() {
+      $('#attrs_table input.attr-order').each(function(index) {
+        $(this).val(index);
+      });
+    };
+
+    // move attribute and its JSON attributes down
+    $('#attrs_table').on('click', 'button.move-order-down', function() {
+      var attrRow = $(this).closest('tr');
+
+      // find last row of next attribute
+      var targetRow = attrRow.nextAll('.attr-row').first();
+      var nextRow = targetRow.next();
+      while (nextRow && nextRow.hasClass('json-row')) {
+        // next JSON attribute
+        targetRow = nextRow;
+        nextRow = nextRow.next();
+      }
+
+      // get next rows before moving
+      var nextRows = attrRow.nextAll();
+
+      // move attribute
+      attrRow.insertAfter(targetRow);
+      targetRow = attrRow;
+
+      for (var i=0; i<nextRows.length; i++) {
+        var jsonRow = $(nextRows[i]);
+        if (jsonRow.hasClass('json-row')) {
+          // move JSON attribute
+          jsonRow.insertAfter(targetRow);
+          targetRow = jsonRow;
+        }
+        else {
+          // stop on next attribute
+          break;
+        }
+      }
+
+      updateAttributeOrderFields();
+    });
+
+    // move attribute and its JSON attributes up
+    $('#attrs_table').on('click', 'button.move-order-up', function() {
+      var attrRow = $(this).closest('tr');
+
+      // find first row of previous attribute
+      var targetRow = attrRow.prevAll('.attr-row').first();
+
+      // get next rows before moving
+      var nextRows = attrRow.nextAll();
+
+      // move attribute
+      attrRow.insertBefore(targetRow);
+
+      for (var i=0; i<nextRows.length; i++) {
+        var jsonRow = $(nextRows[i]);
+        if (jsonRow.hasClass('json-row')) {
+          // move JSON attribute
+          jsonRow.insertBefore(targetRow);
+        }
+        else {
+          // stop on next attribute
+          break;
+        }
+      }
+
+      updateAttributeOrderFields();
+    });
+
+    $('#attrs_table').on('click', 'button.load-json-attrs', function() {
+      // get selected data_source ID
+      var dataSourceId = $('#data_source').find('option:selected').val();
+      // get selected db_table ID
+      var tableName = $('#db_table').find('option:selected').val();
+
+      // clear JSON attributes
+      var attrRow = $(this).closest('tr');
+      var nextRows = attrRow.nextAll();
+      for (var i=0; i<nextRows.length; i++) {
+        var jsonRow = $(nextRows[i]);
+        if (jsonRow.hasClass('json-row')) {
+          // move JSON attribute
+          jsonRow.remove();
+        }
+        else {
+          // stop on next attribute
+          break;
+        }
+      }
+
+      // load JSON attributes for field
+      var attrName = $(this).data('attr');
+      var request = $.ajax({
+        url: "{{ url_for('data_set_json_attrs') }}",
+        data: {
+          data_source_id: dataSourceId,
+          table_name: tableName,
+          attr_name: attrName
+        },
+        dataType: 'json',
+        context: this
+      }).done(function(data, status) {
+        if (data.json_attrs.length === 0) {
+          alert("Keine JSON Objektfelder für dieses Attribut gefunden");
+        }
+        else {
+          var attrId = attrRow.data('attrid');
+
+          // add JSON attributes
+          var html = '';
+          for (var i=0; i<data.json_attrs.length; i++) {
+            var jsonAttr = data.json_attrs[i];
+
+            html += '<tr class="warning json-row">';
+            html +=   '<td>';
+            html +=     '<input id="' + attrId + '-json_attrs-' + i + '-name" name="' + attrId + '-json_attrs-' + i + '-name" required="" type="hidden" value="' + jsonAttr + '">';
+            html +=     '<p class="form-control-static pull-right">' + jsonAttr + '</p>';
+            html +=   '</td>';
+            html +=   '<td><input class="form-control" id="' + attrId + '-json_attrs-' + i + '-alias" name="' + attrId + '-json_attrs-' + i + '-alias" type="text" value=""></td>';
+            html +=   '<td><input class="checkbox" id="' + attrId + '-json_attrs-' + i + '-active" name="' + attrId + '-json_attrs-' + i + '-active" type="checkbox" value="y"></td>';
+            html +=   '<td colspan="3"></td>';
+            html += '</tr>';
+          }
+          attrRow.after(html);
+        }
+      }).fail(function(jqXHR, status) {
+        var msg = jqXHR.statusText;
+        if (jqXHR.responseJSON) {
+          msg = jqXHR.responseJSON.error;
+        }
+        alert("Fehler beim Laden der JSON Attribute\n\n" + msg);
+      });
+    });
+
+    var nextPermissionFieldIndex = {{ form.permissions.entries.__len__() }};
+
+    $('#add_role_permission_btn').click(function() {
+      // get selected role
+      var option = $('#role').find('option:selected');
+      var roleId = option.val();
+      var roleName = option.text();
+
+      // index for new permission field
+      var i = nextPermissionFieldIndex;
+      nextPermissionFieldIndex += 1;
+
+      // add permissions row for selected role
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="permissions-' + i + '-role_id" name="permissions-' + i + '-role_id" value="' + roleId + '" type="hidden">';
+      html +=     '<input id="permissions-' + i + '-role_name" name="permissions-' + i + '-role_name" value="' + roleName + '" type="hidden">';
+      html +=     roleName;
+      html +=   '</td>';
+      html +=   '<td><input id="permissions-' + i + '-read" name="permissions-' + i + '-read" value="y" type="checkbox" checked="">';
+      html +=   '<td class="permission-write"><input id="permissions-' + i + '-write" name="permissions-' + i + '-write" value="y" type="checkbox"></td>';
+      html += '</tr>';
+
+      $('#add_role_permission_row').before(html);
+
+      if ($('#connection_type').find('option:selected').val() != 'database') {
+        // hide write permissions if raster
+        $('#permissions_table').find('.permission-write').hide();
+      }
+
+      // remove role from select
+      option.remove();
+      if ($('#role option').length === 0) {
+        // remove role select and button if role list is empty
+        $('#add_role_permission_row').remove();
+      }
+    });
+
+    // initialize
+    toggleFields();
+    filterDbTables();
+  });
+</script>
+<style type="text/css">
+<!--
+  {# hide top and bottom reorder buttons using CSS #}
+  #attrs_table tbody tr:first-child button.move-order-up {
+    visibility: hidden;
+  }
+  #attrs_table tbody tr:last-child button.move-order-down {
+    visibility: hidden;
+  }
+-->
+</style>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <div id="db_alerts" class="row">
+    <div class="col-md-12">
+      {% if form.db_alert_msg %}
+        <div class="alert alert-danger" role="alert">
+          <strong>{{ form.db_alert_title }}</strong><br/>
+          <div style="font-family: monospace">
+            {% autoescape false %}
+              {{ form.db_alert_msg | replace('\n', '<br/>') | replace(' ', '&nbsp;') }}
+            {% endautoescape %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post" enctype="multipart/form-data">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {# disable type selection when editing an existing DataSet #}
+    {{ wtf.form_field(form.connection_type, form_type="horizontal", horizontal_columns=('sm', 2, 5), disabled=(method != 'POST')) }}
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.title, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.synonyms, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.abstract, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.keywords, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.feature_id_column, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.data_owner, form_type="horizontal", horizontal_columns=('sm', 2, 5))}}
+
+    {# vector data set #}
+    {{ wtf.form_field(form.data_source, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.db_table, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    <div class="form-group">
+      <div class="col-sm-offset-2 col-sm-5">
+        <div class="input-group">
+          <input id="db_table_filter" class="form-control" type="text" placeholder="Filter für DB Entität">
+          <span class="input-group-btn">
+            <button id="clear_db_table_filter" class="btn btn-default" type="button">
+              <span class="glyphicon glyphicon-remove">
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {% if form.primary_key_required %}
+      {{ wtf.form_field(form.primary_key, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+
+    {% if form.geom_column.choices %}
+      {{ wtf.form_field(form.geom_column, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+
+    {# raster data set #}
+    {{ wtf.form_field(form.raster_data_source, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.raster_data_set, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {# generic data set #}
+    {{ wtf.form_field(form.basic_data_source, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.basic_db_table, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {{ wtf.form_field(form.searchable, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.facet, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.filter_word, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% for checkbox in [form.in_wms, form.in_wfs] %}
+      <div class="form-group ">
+        <label class="control-label col-sm-2" for="{{ checkbox.name }}">{{ checkbox.label }}</label>
+        <div class="col-sm-5">
+          <div class="checkbox">
+            <label>
+              {{ checkbox() }}
+            </label>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+    {{ wtf.form_field(form.info_template, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.object_sheet, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.legend_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='image/*') }}
+    {% if form.legend_present %}
+      {{ wtf.form_field(form.remove_legend, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+    {{ wtf.form_field(form.qml_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='.qml,.zip') }}
+    {% if form.qml_present %}
+      {{ wtf.form_field(form.remove_qml, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+    {{ wtf.form_field(form.client_qml_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='.qml,.zip') }}
+    {% if form.client_qml_present %}
+      {{ wtf.form_field(form.remove_client_qml, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+    {{ wtf.form_field(form.transparency, form_type="horizontal", horizontal_columns=('sm', 2, 5), type='number', min=0, max=100) }}
+
+    <div class="form-group">
+        <label class="control-label col-sm-2">Attribute</label>
+        <div class="col-sm-10 ">
+            <table id="attrs_table" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Attribut</th>
+                        <th>Alias</th>
+                        <th>Format</th>
+                        <th>Aktiv</th>
+                        <th>Anzeigefeld</th>
+                        <th>Reihenfolge</th>
+                        <th>JSON</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% for attr in form.attrs.entries %}
+                    <tr class="attr-row" data-attrid="{{ attr.id }}">
+                      <td>
+                        {% if false %}
+                        <input name="{{ attr.form.name.name }}" value="{{ attr.form.name.data }}" type="hidden">
+                        {% endif %}
+                        {{ attr.form.name }}
+                        {{ attr.attr_order(class='attr-order') }}
+                        <p class="form-control-static">{{ attr.form.name.data }}</p>
+                      </td>
+                      <td>{{ attr.form.alias(class='form-control') }}</td>
+                      <td>{{ attr.form.format(class='form-control') }}</td>
+                      <td>{{ attr.form.active(class='checkbox') }}</td>
+                      <td>{{ attr.form.displayfield(class='checkbox') }}</td>
+                      <td>
+                        <button type="button" class="btn btn-default btn-sm move-order-down">
+                          <span class="glyphicon glyphicon-chevron-down"></span>
+                        </button>
+                        <button type="button" class="btn btn-default btn-sm move-order-up">
+                          <span class="glyphicon glyphicon-chevron-up"></span>
+                        </button>
+                      </td>
+                      <td>
+                        <button type="button" class="btn btn-default btn-sm load-json-attrs" title="Feld als JSON auslesen" data-attr="{{ attr.form.name.data }}">
+                          <span class="glyphicon glyphicon-list-alt"></span>
+                        </button>
+                      </td>
+                    </tr>
+
+                    {% for json_attr in attr.form.json_attrs.entries %}
+                      <tr class="warning json-row">
+                        <td>
+                          {{ json_attr.form.name }}
+                          <p class="form-control-static pull-right">{{ json_attr.form.name.data }}</p>
+                        </td>
+                        <td>{{ json_attr.form.alias(class='form-control') }}</td>
+                        <td>{{ json_attr.form.active(class='checkbox') }}</td>
+                        <td colspan="3"></td>
+                      </tr>
+                    {% endfor %}
+                  {% endfor %}
+                </tbody>
+            </table>
+            <p class="help-block">Alias: Anwendung in WMS und WFS. Keine Auswirkung für Dataservice</p>
+            <p class="help-block">Format: <a href="https://docs.python.org/3.4/library/string.html#format-specification-mini-language">Python-Formatausdruck</a> oder JSON-Dict. Beispiele: <code>.2f</code>, <code>%d.%m.%Y</code>, <code>{"t": "Ja", "f": "Nein"}</code> (Zahlen benötigen einen Format-Spezifier)</p>
+            <p class="help-block">Aktiv: Aktivierung für WMS, WFS und Dataservice</p>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-sm-2">Nutzerrechte</label>
+        <div class="col-sm-5">
+            <table id="permissions_table" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rolle</th>
+                        <th>Lesen</th>
+                        <th class="permission-write">Schreiben</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  {% for permission in form.permissions.entries %}
+                    <tr>
+                        <td>
+                          {{ permission.role_id }}
+                          {{ permission.role_name }}
+                          {{ permission.role_name.data }}
+                        </td>
+                        <td>{{ permission.form.read }}</td>
+                        <td class="permission-write">{{ permission.form.write }}</td>
+                    </tr>
+                  {% endfor %}
+                  {% if form.role.choices %}
+                    <tr id="add_role_permission_row">
+                        <td>{{ form.role(class='form-control') }}</td>
+                        <td><button id='add_role_permission_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+                        <td></td>
+                    </tr>
+                  {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

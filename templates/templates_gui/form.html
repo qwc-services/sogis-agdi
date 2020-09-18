@@ -1,0 +1,296 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    // toggle fields on type select
+    var toggleFields = function() {
+      // get selected type
+      var option = $('#type').find('option:selected');
+      var type = option.val();
+      // hide all fields
+      $('.field').hide();
+      // show fields for type
+      $('.field-' + type).show();
+
+      toggleInfoFields();
+    };
+    $('#type').change(toggleFields);
+
+    $('table').on('click', 'button.remove-item', function() {
+      // remove item
+      $(this).closest('tr').remove();
+    });
+
+    // toggle info fields on info type select
+    var toggleInfoFields = function() {
+      // get selected type
+      var option = $('#type').find('option:selected');
+      var type = option.val();
+      // hide all info fields
+      $('.field-info-type').hide();
+      $('.input-info-type').removeAttr('required');
+      if (type == 'info') {
+        // get selected info type
+        var info_type = $('input[name=info_type]:checked').val();
+        // show fields for info type
+        $('.field-info-' + info_type).show();
+        $('.input-info-type-' + info_type).attr('required', '');
+      }
+    };
+    $('input[name=info_type]').change(toggleInfoFields);
+
+    var nextDataProductIndex = {{ form.data_products.last_index + 1 }};
+
+    $('#add_data_product_btn').click(function() {
+      // get selected data product
+      var option = $('#data_product').find('option:selected');
+      var dataProductId = option.val();
+      var dataProductName = option.text();
+
+      if (dataProductId === '0') {
+        // skip empty selection
+        return;
+      }
+
+      // index for new data product field
+      var i = nextDataProductIndex;
+      nextDataProductIndex += 1;
+
+      // add row
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="data_products-' + i + '-layer_id" name="data_products-' + i + '-data_product_id" value="' + dataProductId + '" type="hidden">';
+      html +=     '<input id="data_products-' + i + '-layer_name" name="data_products-' + i + '-data_product_name" value="' + dataProductName + '" type="hidden">';
+      html +=     dataProductName;
+      html +=   '</td>';
+      html +=   '<td><button class="btn btn-danger remove-item" type="button">Entfernen</button></td>';
+      html += '</tr>';
+
+      $('#add_data_product_row').before(html);
+    });
+
+    var nextDataSetIndex = {{ form.datasets.last_index + 1 }};
+
+    $('#add_data_set_btn').click(function() {
+      // get selected data set
+      var option = $('#data_set').find('option:selected');
+      var dataSetId = option.val();
+      var dataSetName = option.text();
+
+      if (dataSetId === '0') {
+        // skip empty selection
+        return;
+      }
+
+      // index for new data set field
+      var i = nextDataSetIndex;
+      nextDataSetIndex += 1;
+
+      // add row
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="datasets-' + i + '-layer_id" name="datasets-' + i + '-data_set_id" value="' + dataSetId + '" type="hidden">';
+      html +=     '<input id="datasets-' + i + '-layer_name" name="datasets-' + i + '-data_set_name" value="' + dataSetName + '" type="hidden">';
+      html +=     dataSetName;
+      html +=   '</td>';
+      html +=   '<td><button class="btn btn-danger remove-item" type="button">Entfernen</button></td>';
+      html += '</tr>';
+
+      $('#add_data_set_row').before(html);
+    });
+
+    var nextPermissionFieldIndex = {{ form.permissions.entries.__len__() }};
+
+    $('#add_role_permission_btn').click(function() {
+      // get selected role
+      var option = $('#role').find('option:selected');
+      var roleId = option.val();
+      var roleName = option.text();
+
+      // index for new permission field
+      var i = nextPermissionFieldIndex;
+      nextPermissionFieldIndex += 1;
+
+      // add permissions row for selected role
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="permissions-' + i + '-role_id" name="permissions-' + i + '-role_id" value="' + roleId + '" type="hidden">';
+      html +=     '<input id="permissions-' + i + '-role_name" name="permissions-' + i + '-role_name" value="' + roleName + '" type="hidden">';
+      html +=     roleName;
+      html +=   '</td>';
+      html +=   '<td><input id="permissions-' + i + '-read" name="permissions-' + i + '-read" value="y" type="checkbox" checked="">';
+      html += '</tr>';
+
+      $('#add_role_permission_row').before(html);
+
+      // remove role from select
+      option.remove();
+      if ($('#role option').length === 0) {
+        // remove role select and button if role list is empty
+        $('#add_role_permission_row').remove();
+      }
+    });
+
+    // initialize
+    toggleFields();
+    toggleInfoFields();
+  });
+</script>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post" enctype="multipart/form-data">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.responsible, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {# disable type selection when editing an existing template #}
+    {{ wtf.form_field(form.type, form_type="horizontal", horizontal_columns=('sm', 2, 5), disabled=(method != 'POST')) }}
+
+    <div class="field field-jasper">
+      {{ wtf.form_field(form.jasper_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='.jrxml,.zip') }}
+    </div>
+
+    <div class="field field-info" style="display: none;">
+      {{ wtf.form_field(form.info_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='.html') }}
+    </div>
+
+    <div class="field field-qgis" style="display: none;">
+      {{ wtf.form_field(form.qgis_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='.qpt,.zip') }}
+    </div>
+
+    <div class="field field-jasper" style="display: none;">
+      {{ wtf.form_field(form.default_format, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    </div>
+    <div class="form-group field field-jasper">
+      <label class="control-label col-sm-2">Verwendete Dataproducts</label>
+      <div class="col-sm-5">
+        <table id="sub_layers_table"  class="table table-striped">
+          <thead>
+            <tr>
+              <th>DataProduct</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for data_product in form.data_products.entries %}
+            <tr>
+              <td>
+                {{ data_product.data_product_id }}
+                {{ data_product.data_product_name }}
+                {{ data_product.data_product_name.data }}
+              </td>
+              <td><button class='btn btn-danger remove-item' type="button">Entfernen</button></td>
+            </tr>
+          {% endfor %}
+          {% if form.data_product.choices %}
+            <tr id="add_data_product_row">
+              <td>{{ form.data_product(class='form-control') }}</td>
+              <td><button id='add_data_product_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="form-group field field-jasper">
+      <label class="control-label col-sm-2">Verwendete DataSets</label>
+      <div class="col-sm-5">
+        <table id="sub_layers_table"  class="table table-striped">
+          <thead>
+            <tr>
+              <th>DataSet</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for data_set in form.datasets.entries %}
+            <tr>
+              <td>
+                {{ data_set.data_set_id }}
+                {{ data_set.data_set_name }}
+                {{ data_set.data_set_name.data }}
+              </td>
+              <td><button class='btn btn-danger remove-item' type="button">Entfernen</button></td>
+            </tr>
+          {% endfor %}
+          {% if form.data_set.choices %}
+            <tr id="add_data_set_row">
+              <td>{{ form.data_set(class='form-control') }}</td>
+              <td><button id='add_data_set_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="form-group field field-info" style="display: none;">
+      <div class="col-sm-offset-2 col-sm-5">
+      {% for subfield in form.info_type %}
+        <label class="radio-inline">
+          {{ subfield }} {{ subfield.label }}
+        </label>
+      {% endfor %}
+      </div>
+    </div>
+    <div class="field field-info field-info-type field-info-sql" style="display: none;">
+      {{ wtf.form_field(form.info_sql, form_type="horizontal", horizontal_columns=('sm', 2, 5), rows=8, class='form-control input-info-type input-info-type-sql') }}
+    </div>
+    <div class="field field-info field-info-type field-info-module" style="display: none;">
+      {{ wtf.form_field(form.info_module, form_type="horizontal", horizontal_columns=('sm', 2, 5), class='form-control input-info-type input-info-type-module') }}
+    </div>
+    <div class="form-group field field-info field-info-type field-info-wms" style="display: none;">
+      <div class="col-sm-offset-2 col-sm-5">
+        <p class="help-block">WMS GetFeatureInfo</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="control-label col-sm-2">Nutzerrechte</label>
+      <div class="col-sm-5">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Rolle</th>
+              <th>Lesen</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for permission in form.permissions.entries %}
+            <tr>
+              <td>
+                {{ permission.role_id }}
+                {{ permission.role_name }}
+                {{ permission.role_name.data }}
+              </td>
+              <td>{{ permission.form.read }}</td>
+            </tr>
+          {% endfor %}
+          {% if form.role.choices %}
+            <tr id="add_role_permission_row">
+              <td>{{ form.role(class='form-control') }}</td>
+              <td><button id='add_role_permission_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

@@ -1,0 +1,228 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    // update all layer_order fields in order of layer table rows
+    var updateLayerOrderFields = function() {
+      $('#sub_layers_table input.layer-order').each(function(index) {
+        $(this).val(index);
+      });
+    };
+
+    $('#sub_layers_table').on('click', 'button.move-order-down', function() {
+      // move sublayer down
+      var rowEl = $(this).closest('tr');
+      rowEl.insertAfter(rowEl.next());
+      updateLayerOrderFields();
+    });
+
+    $('#sub_layers_table').on('click', 'button.move-order-up', function() {
+      // move sublayer up
+      var rowEl = $(this).closest('tr');
+      rowEl.insertBefore(rowEl.prev());
+      updateLayerOrderFields();
+    });
+
+    $('#sub_layers_table').on('click', 'button.remove-layer', function() {
+      // remove sublayer
+      $(this).closest('tr').remove();
+      updateLayerOrderFields();
+    });
+
+    var nextSubLayerFieldIndex = {{ form.sublayers.last_index + 1 }};
+
+    $('#add_sub_layer_btn').click(function() {
+      // get selected layer
+      var option = $('#layer').find('option:selected');
+      var layerId = option.val();
+      var layerName = option.text();
+
+      // index for new sub layer field
+      var i = nextSubLayerFieldIndex;
+      nextSubLayerFieldIndex += 1;
+
+      // add permissions row for selected role
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="sublayers-' + i + '-layer_id" name="sublayers-' + i + '-layer_id" value="' + layerId + '" type="hidden">';
+      html +=     '<input id="sublayers-' + i + '-layer_name" name="sublayers-' + i + '-layer_name" value="' + layerName + '" type="hidden">';
+      html +=     '<input class="layer-order" id="sublayers-' + i + '-layer_order" name="sublayers-' + i + '-layer_order" value="" type="hidden">';
+      html +=     layerName;
+      html +=   '</td>';
+      html +=   '<td>';
+      html +=     '<input id="sublayers-' + i + '-layer_transparency" max="100" min="0" name="sublayers-' + i + '-layer_transparency" value="0" type="number">';
+      html +=   '</td>';
+      html +=   '<td>';
+      html +=     '<input id="sublayers-' + i + '-layer_active" name="sublayers-' + i + '-layer_active" value="y" type="checkbox">';
+      html +=   '</td>';
+      html +=   '<td>';
+      html +=     '<button type="button" class="btn btn-default btn-sm move-order-down">';
+      html +=       '<span class="glyphicon glyphicon-chevron-down"></span>';
+      html +=     '</button>';
+      html +=     ' <button type="button" class="btn btn-default btn-sm move-order-up">';
+      html +=       '<span class="glyphicon glyphicon-chevron-up"></span>';
+      html +=     '</button>';
+      html +=   '</td>';
+      html +=   '<td><button class="btn btn-danger remove-layer" type="button">Entfernen</button></td>';
+      html += '</tr>';
+
+      $('#add_sub_layer_row').before(html);
+
+      updateLayerOrderFields();
+    });
+
+    var nextPermissionFieldIndex = {{ form.permissions.entries.__len__() }};
+
+    $('#add_role_permission_btn').click(function() {
+      // get selected role
+      var option = $('#role').find('option:selected');
+      var roleId = option.val();
+      var roleName = option.text();
+
+      // index for new permission field
+      var i = nextPermissionFieldIndex;
+      nextPermissionFieldIndex += 1;
+
+      // add permissions row for selected role
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="permissions-' + i + '-role_id" name="permissions-' + i + '-role_id" value="' + roleId + '" type="hidden">';
+      html +=     '<input id="permissions-' + i + '-role_name" name="permissions-' + i + '-role_name" value="' + roleName + '" type="hidden">';
+      html +=     roleName;
+      html +=   '</td>';
+      html +=   '<td><input id="permissions-' + i + '-read" name="permissions-' + i + '-read" value="y" type="checkbox" checked="">';
+      html += '</tr>';
+
+      $('#add_role_permission_row').before(html);
+
+      // remove role from select
+      option.remove();
+      if ($('#role option').length === 0) {
+        // remove role select and button if role list is empty
+        $('#add_role_permission_row').remove();
+      }
+    });
+  });
+</script>
+<style type="text/css">
+<!--
+  {# hide top and bottom reorder buttons using CSS #}
+  #sub_layers_table tbody tr:first-child button.move-order-up {
+    visibility: hidden;
+  }
+  #sub_layers_table tbody tr:nth-last-child(2) button.move-order-down {
+    visibility: hidden;
+  }
+-->
+</style>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post" enctype="multipart/form-data">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {{ wtf.form_field(form.title, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.responsible, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    <div class="form-group">
+      <label class="control-label col-sm-2">Verwendete Dataproducts</label>
+      <div class="col-sm-8">
+        <table id="sub_layers_table"  class="table table-striped">
+          <thead>
+            <tr>
+              <th>DataProduct</th>
+              <th>Transparenz</th>
+              <th>Sichtbarkeit</th>
+              <th>Reihenfolge</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for layer in form.sublayers.entries %}
+            <tr>
+              <td>
+                {{ layer.layer_id }}
+                {{ layer.layer_name }}
+                {{ layer.layer_order(class='layer-order') }}
+                {{ layer.layer_name.data }}
+              </td>
+              <td>{{ layer.layer_transparency(type='number', min=0, max=100) }}</td>
+              <td>{{ layer.layer_active }}</td>
+              <td>
+                <button type="button" class="btn btn-default btn-sm move-order-down">
+                  <span class="glyphicon glyphicon-chevron-down"></span>
+                </button>
+                <button type="button" class="btn btn-default btn-sm move-order-up">
+                  <span class="glyphicon glyphicon-chevron-up"></span>
+                </button>
+              </td>
+              <td><button class='btn btn-danger remove-layer' type="button">Entfernen</button></td>
+            </tr>
+          {% endfor %}
+          {% if form.layer.choices %}
+            <tr id="add_sub_layer_row">
+              <td>{{ form.layer(class='form-control') }}</td>
+              <td><button id='add_sub_layer_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+              <td></td>
+              <td></td>
+              <td></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{ wtf.form_field(form.background_layer, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.initial_extent, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.initial_scale, form_type="horizontal", horizontal_columns=('sm', 2, 5), type='number', min=1) }}
+    {{ wtf.form_field(form.thumbnail_file, form_type="horizontal", horizontal_columns=('sm', 2, 5), accept='image/*') }}
+    {% if form.thumbnail_present %}
+    {{ wtf.form_field(form.remove_thumbnail, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {% endif %}
+    <div class="form-group">
+      <label class="control-label col-sm-2">Nutzerrechte</label>
+      <div class="col-sm-5">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Rolle</th>
+              <th>Lesen</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for permission in form.permissions.entries %}
+            <tr>
+              <td>
+                {{ permission.role_id }}
+                {{ permission.role_name }}
+                {{ permission.role_name.data }}
+              </td>
+              <td>{{ permission.form.read }}</td>
+            </tr>
+          {% endfor %}
+          {% if form.role.choices %}
+            <tr id="add_role_permission_row">
+              <td>{{ form.role(class='form-control') }}</td>
+              <td><button id='add_role_permission_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

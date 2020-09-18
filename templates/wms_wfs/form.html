@@ -1,0 +1,34 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    <h4>Metadaten</h4>
+    {{ wtf.form_field(form.service_title, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.service_abstract, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.keywords, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.contact_person, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.contact_organization, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.contact_position, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.contact_phone, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.contact_mail, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.fees, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.access_constraints, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    <h4>WMS Infos</h4>
+    {{ wtf.form_field(form.wms_root_title, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.crs_list, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.wms_extent, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

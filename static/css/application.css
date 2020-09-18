@@ -1,0 +1,9 @@
+body {
+  padding-top: 70px;
+}
+
+@media (min-width: 992px) {
+  .list-index .col-tools {
+    min-width: 232px;
+  }
+}

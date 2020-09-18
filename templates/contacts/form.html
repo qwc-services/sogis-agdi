@@ -1,0 +1,79 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    // toggle fields on type select
+    var toggleFields = function() {
+      // get selected type
+      var option = $('#type').find('option:selected');
+      var type = option.val();
+
+      var isPerson = (type == 'person');
+      if (isPerson) {
+        // reset organisation field values
+        $('#unit').val('');
+        $('#abbreviation').val('');
+      }
+      else {
+        // reset person field values
+        $('#email').val('');
+        $('#phone').val('');
+      }
+
+      // toggle person fields
+      $('#function').closest('div.form-group').toggle(isPerson);
+      $('#email').closest('div.form-group').toggle(isPerson);
+      $('#phone').closest('div.form-group').toggle(isPerson);
+
+      // toggle organisation fields
+      $('#unit').closest('div.form-group').toggle(!isPerson);
+      $('#abbreviation').closest('div.form-group').toggle(!isPerson);
+    };
+    $('#type').change(toggleFields);
+
+    // initialize
+    toggleFields();
+  });
+</script>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {# disable type selection when editing an existing contact #}
+    {{ wtf.form_field(form.type, form_type="horizontal", horizontal_columns=('sm', 2, 5), disabled=(method != 'POST')) }}
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {{ wtf.form_field(form.id_organisation, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {{ wtf.form_field(form.function, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.email, form_type="horizontal", horizontal_columns=('sm', 2, 5), type='email') }}
+    {{ wtf.form_field(form.phone, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {{ wtf.form_field(form.abbreviation, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.unit, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    <div class="panel panel-default">
+      <div class="panel-heading">Adresse</div>
+      <div class="panel-body">
+        {{ wtf.form_field(form.street, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+        {{ wtf.form_field(form.house_no, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+        {{ wtf.form_field(form.zip, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+        {{ wtf.form_field(form.city, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+        {{ wtf.form_field(form.country_code, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+      </div>
+    </div>
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

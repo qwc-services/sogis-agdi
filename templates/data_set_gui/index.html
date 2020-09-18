@@ -1,0 +1,21 @@
+{% extends "base_index.html" %}
+
+{% block title %}DataSets{% endblock %}
+
+{% block new_resource_label %}Neues DataSet{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+  <th>Titel</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.gdi_oid }}</td>
+  <td {% if resource.name | length > 50 %}title="{{ resource.name }}"{% endif %}>
+    {{ resource.name | truncate(50, true, '...') }}
+  </td>
+  <td>{{ resource.ows_layers[0].title if resource.ows_layers else resource.data_set.data_set_name }}</td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}DataSet entfernen?{% endblock %}

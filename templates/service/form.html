@@ -1,0 +1,158 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    $('table').on('click', 'button.remove-item', function() {
+      // remove item
+      $(this).closest('tr').remove();
+    });
+
+    var nextDataProductIndex = {{ form.data_products.last_index + 1 }};
+
+    $('#add_data_product_btn').click(function() {
+      // get selected data product
+      var option = $('#data_product').find('option:selected');
+      var dataProductId = option.val();
+      var dataProductName = option.text();
+
+      if (dataProductId === '0') {
+        // skip empty selection
+        return;
+      }
+
+      // index for new data product field
+      var i = nextDataProductIndex;
+      nextDataProductIndex += 1;
+
+      // add permissions row for selected role
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="data_products-' + i + '-layer_id" name="data_products-' + i + '-data_product_id" value="' + dataProductId + '" type="hidden">';
+      html +=     '<input id="data_products-' + i + '-layer_name" name="data_products-' + i + '-data_product_name" value="' + dataProductName + '" type="hidden">';
+      html +=     dataProductName;
+      html +=   '</td>';
+      html +=   '<td><button class="btn btn-danger remove-item" type="button">Entfernen</button></td>';
+      html += '</tr>';
+
+      $('#add_data_product_row').before(html);
+    });
+
+    var nextServiceModuleIndex = {{ form.service_modules.last_index + 1 }};
+
+    $('#add_service_module_btn').click(function() {
+      // get selected service_module
+      var option = $('#service_module').find('option:selected');
+      var serviceModuleId = option.val();
+      var serviceModuleName = option.text();
+
+      if (serviceModuleId === '0') {
+        // skip empty selection
+        return;
+      }
+
+      // index for new service_module product field
+      var i = nextServiceModuleIndex;
+      nextServiceModuleIndex += 1;
+
+      // add permissions row for selected role
+      var html = '';
+      html += '<tr>';
+      html +=   '<td>';
+      html +=     '<input id="service_modules-' + i + '-layer_id" name="service_modules-' + i + '-service_module_id" value="' + serviceModuleId + '" type="hidden">';
+      html +=     '<input id="service_modules-' + i + '-layer_name" name="service_modules-' + i + '-service_module_name" value="' + serviceModuleName + '" type="hidden">';
+      html +=     serviceModuleName;
+      html +=   '</td>';
+      html +=   '<td><button class="btn btn-danger remove-item" type="button">Entfernen</button></td>';
+      html += '</tr>';
+
+      $('#add_service_module_row').before(html);
+    });
+  });
+</script>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.responsible, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.url, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.specific_source, rows=8, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    <div class="form-group">
+      <label class="control-label col-sm-2">Verwendete DataProducts</label>
+      <div class="col-sm-5">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>DataProduct</th>
+              <th style="width: 1%"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for data_product in form.data_products.entries %}
+            <tr>
+              <td>
+                {{ data_product.data_product_id }}
+                {{ data_product.data_product_name }}
+                {{ data_product.data_product_name.data }}
+              </td>
+              <td><button class='btn btn-danger remove-item' type="button">Entfernen</button></td>
+            </tr>
+          {% endfor %}
+          {% if form.data_product.choices %}
+            <tr id="add_data_product_row">
+              <td>{{ form.data_product(class='form-control') }}</td>
+              <td><button id='add_data_product_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="control-label col-sm-2">Verwendete Modules</label>
+      <div class="col-sm-5">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th style="width: 1%"></th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for service_module in form.service_modules.entries %}
+            <tr>
+              <td>
+                {{ service_module.service_module_id }}
+                {{ service_module.service_module_name }}
+                {{ service_module.service_module_name.data }}
+              </td>
+              <td><button class='btn btn-danger remove-item' type="button">Entfernen</button></td>
+            </tr>
+          {% endfor %}
+          {% if form.service_module.choices %}
+            <tr id="add_service_module_row">
+              <td>{{ form.service_module(class='form-control') }}</td>
+              <td><button id='add_service_module_btn' class='btn btn-success' type="button">Hinzufügen</button></td>
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

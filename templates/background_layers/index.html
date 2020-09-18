@@ -1,0 +1,17 @@
+{% extends "base_index.html" %}
+
+{% block title %}BackgroundLayers{% endblock %}
+
+{% block new_resource_label %}Neuer BackgroundLayer{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.gdi_oid }}</td>
+  <td>{{ resource.name }}</td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}BackgroundLayer entfernen?{% endblock %}

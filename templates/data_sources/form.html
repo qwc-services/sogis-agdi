@@ -1,0 +1,48 @@
+{% import "bootstrap/wtf.html" as wtf %}
+{% extends "base.html" %}
+
+{% block scripts %}
+{{super()}}
+<script type="text/javascript">
+  $(function() {
+    // update connection label on type select
+    var updateConnectionLabel = function() {
+      // get selected type
+      var option = $('#connection_type').find('option:selected');
+      var type = option.val();
+
+      if (type == 'database') {
+        $('label[for=connection]').html("DB Connection");
+      }
+      else {
+        $('label[for=connection]').html("Pfad zum Ordner");
+      }
+    };
+    $('#connection_type').change(updateConnectionLabel);
+
+    // initialize
+    updateConnectionLabel();
+  });
+</script>
+{% endblock %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block container %}
+  <h1>{{ title }}</h1>
+
+  <form class="form form-horizontal" action="{{ action }}" method="post">
+    {% if method != 'POST' %}
+      <input type="hidden" name="_method" value="{{method}}" />
+    {% endif %}
+    {{ form.csrf_token }}
+
+    {# disable type selection when editing an existing data source #}
+    {{ wtf.form_field(form.connection_type, form_type="horizontal", horizontal_columns=('sm', 2, 5), disabled=(method != 'POST')) }}
+    {{ wtf.form_field(form.name, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.description, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.responsible, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.connection, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {{ wtf.form_field(form.submit, class="col-sm-offset-2 btn btn-primary") }}
+  </form>
+{% endblock %}

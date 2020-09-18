@@ -1,0 +1,19 @@
+{% extends "base_index.html" %}
+
+{% block title %}Service{% endblock %}
+
+{% block new_resource_label %}Neuer Service{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+  <th>URL</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.gdi_oid }}</td>
+  <td>{{ resource.name }}</td>
+  <td>{{ resource.url }}</td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}Service entfernen?{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base_index.html" %}
+
+{% block title %}ProductSets{% endblock %}
+
+{% block new_resource_label %}Neues ProductSet{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+  <th>Titel</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.gdi_oid }}</td>
+  <td>{{ resource.name }}</td>
+  <td>{{ resource.title }}</td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}ProductSet entfernen?{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base_index.html" %}
+
+{% block title %}Kontakte{% endblock %}
+
+{% block new_resource_label %}Neuer Kontakt{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+  <th>Organisation</th>
+  <th>Typ</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.id }}</td>
+  <td>{{ resource.name }}</td>
+  <td>{{ resource.organisation.abbreviation or resource.organisation.name if resource.organisation }}</td>
+  <td>{{ 'Person' if resource.type == 'person' else 'Organisation' }}</td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}Kontakt entfernen?{% endblock %}

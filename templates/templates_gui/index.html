@@ -1,0 +1,27 @@
+{% extends "base_index.html" %}
+
+{% block title %}Templates{% endblock %}
+
+{% block new_resource_label %}Neues Template{% endblock %}
+
+{% block table_headers %}
+  <th>ID</th>
+  <th>Name</th>
+  <th>Typ</th>
+{% endblock %}
+
+{% block resource_fields %}
+  <td>{{ resource.gdi_oid }}</td>
+  <td>{{ resource.name }}</td>
+  <td>{{ resource.type }}</td>
+{% endblock %}
+
+{% block delete_resource_confirmation %}Template entfernen?{% endblock %}
+
+{% block resource_tools %}
+  {% if resource.type == 'jasper' %}
+    <a href="{{ url_for('generate_report', id=resource[pkey]) }}" class="btn btn-success" role="button">
+      {{ utils.icon('file') }} Report
+    </a>
+  {% endif %}
+{% endblock %}
