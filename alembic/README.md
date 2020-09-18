@@ -21,7 +21,7 @@ Uses PostgreSQL connection service `soconfig_services` (ConfigDB) (cf. `sqlalche
 Usage
 -----
 
-Run commands from `somap/` root directory.
+Run commands from root directory.
 
 Create a migration script:
 
