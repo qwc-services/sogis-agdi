@@ -40,7 +40,8 @@ class DataSetGUIForm(FlaskForm):
         choices=[
             ('database', "PostGIS Datenbank"),
             ('basic_database', "andere Datenbank"),
-            ('directory', "Filebasiert")
+            ('directory', "Filebasiert"),
+            ('ows', "OWS")
         ],
         default='database'
     )
@@ -89,6 +90,13 @@ class DataSetGUIForm(FlaskForm):
     )
     basic_db_table = StringField(
         'DB Entität', validators=[Optional()]
+    )
+
+    ows_data_source = SelectField(
+        'Datasource', coerce=int, choices=[], validators=[Optional()]
+    )
+    ows_service_layers = StringField(
+        'OWS Layers', validators=[Optional()]
     )
 
     primary_key_required = False

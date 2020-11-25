@@ -7,7 +7,9 @@ from wtforms.validators import DataRequired
 class DataSourceForm(FlaskForm):
     connection_type = SelectField('Typ', choices=[
         ('database', "Datenbank"),
-        ('directory', "Filebasiert")
+        ('directory', "Filebasiert"),
+        ('wms', "WMS"),
+        ('wmts', "WMTS")
     ])
     name = StringField('Name', validators=[DataRequired()])
     description = TextAreaField('Beschreibung', validators=[DataRequired()])

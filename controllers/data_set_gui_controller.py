@@ -180,6 +180,9 @@ class DataSetGUIController(Controller):
             # select DataSet type
             form.connection_type.data = resource.data_set.data_source \
                 .connection_type
+            if resource.data_set.data_source.connection_type in (
+                    'wms', 'wmts'):
+                form.connection_type.data = 'ows'
             if not resource.ows_layers:
                 # basic data set if no ows_layer_data present
                 form.connection_type.data = 'basic_database'
@@ -206,6 +209,10 @@ class DataSetGUIController(Controller):
             # basic data set
             form.basic_data_source.data = resource.data_set.gdi_oid_data_source
             form.basic_db_table.data = resource.data_set.data_set_name
+
+            # ows data set
+            form.ows_data_source.data = resource.data_set.gdi_oid_data_source
+            form.ows_service_layers.data = resource.data_set.data_set_name
         else:
             # set default transparency
             if form.transparency.data is None:
@@ -217,6 +224,8 @@ class DataSetGUIController(Controller):
         ds_query = session.query(self.DataSource).order_by(self.DataSource.name)
         data_sources = ds_query.filter_by(connection_type='database').all()
         raster_sources = ds_query.filter_by(connection_type='directory').all()
+        ows_sources = ds_query.filter(
+            self.DataSource.connection_type.in_(['wms', 'wmts'])).all()
 
         info_html_query = session.query(self.TemplateInfo) \
             .order_by(self.TemplateInfo.name)
@@ -244,6 +253,11 @@ class DataSetGUIController(Controller):
             (ds.gdi_oid, ds.name) for ds in raster_sources
         ]
 
+        # set choices for ows data source select field
+        form.ows_data_source.choices = [(0, "")] + [
+            (ds.gdi_oid, ds.name) for ds in ows_sources
+        ]
+
         # set choices for basic data source select field (all DB data sources)
         form.basic_data_source.choices = [(0, "")] + [
             (ds.gdi_oid, ds.name) for ds in data_sources
@@ -252,6 +266,7 @@ class DataSetGUIController(Controller):
         is_vector_data_set = (form.connection_type.data == 'database')
         is_raster_data_set = (form.connection_type.data == 'directory')
         is_basic_data_set = (form.connection_type.data == 'basic_database')
+        is_ows_data_set = (form.connection_type.data == 'ows')
         if is_vector_data_set and form.data_source.data and \
                 form.data_source.data > 0:
             # vector DataSet
@@ -546,6 +561,7 @@ class DataSetGUIController(Controller):
         is_vector_data_set = (form.connection_type.data == 'database')
         is_raster_data_set = (form.connection_type.data == 'directory')
         is_basic_data_set = (form.connection_type.data == 'basic_database')
+        is_ows_data_set = (form.connection_type.data == 'ows')
 
         if resource is None:
             # create new data_set_view
@@ -750,6 +766,22 @@ class DataSetGUIController(Controller):
 
             data_set.data_set_name = form.raster_data_set.data
             data_set.gdi_oid_data_source = form.raster_data_source.data
+        elif is_ows_data_set:
+            # OWS DataSet
+
+            # require data_source and layers
+            if form.ows_data_source.data == 0:
+                self.raise_validation_error(
+                    form.ows_data_source, "Keine DataSource ausgewählt"
+                )
+            if not form.ows_service_layers.data or \
+                    form.ows_service_layers.data == 'None':
+                self.raise_validation_error(
+                    form.ows_service_layers, "Kein OWS layer ausgewählt"
+                )
+
+            data_set.data_set_name = form.ows_service_layers.data
+            data_set.gdi_oid_data_source = form.ows_data_source.data
         else:
             # basic DataSet
 

@@ -14,6 +14,9 @@
       if (type == 'database') {
         $('label[for=connection]').html("DB Connection");
       }
+      else if (type == 'wms' || type == 'wmts' ) {
+        $('label[for=connection]').html("Connection string");
+      }
       else {
         $('label[for=connection]').html("Pfad zum Ordner");
       }

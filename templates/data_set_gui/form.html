@@ -14,6 +14,7 @@
       var isVector = (type == 'database');
       var isRaster = (type == 'directory');
       var isBasic = (type == 'basic_database');
+      var isOws = (type == 'ows');
 
       // clear alerts
       $('#db_alerts > div > div').remove();
@@ -65,26 +66,36 @@
       $('#raster_data_set').closest('div.form-group').toggle(isRaster);
 
       // toggle vector and raster fields
-      $('#title').closest('div.form-group').toggle(!isBasic);
-      $('#synonyms').closest('div.form-group').toggle(!isBasic);
-      $('#abstract').closest('div.form-group').toggle(!isBasic);
-      $('#keywords').closest('div.form-group').toggle(!isBasic);
-      $('#in_wms').closest('div.form-group').toggle(!isBasic);
-      $('#in_wfs').closest('div.form-group').toggle(!isBasic);
-      $('#info_template').closest('div.form-group').toggle(!isBasic);
-      $('#object_sheet').closest('div.form-group').toggle(!isBasic);
-      $('#legend_file').closest('div.form-group').toggle(!isBasic);
-      $('#remove_legend').closest('div.form-group').toggle(!isBasic);
-      $('#qml_file').closest('div.form-group').toggle(!isBasic);
-      $('#remove_qml').closest('div.form-group').toggle(!isBasic);
-      $('#client_qml_file').closest('div.form-group').toggle(!isBasic);
-      $('#remove_client_qml').closest('div.form-group').toggle(!isBasic);
-      $('#transparency').closest('div.form-group').toggle(!isBasic);
-      $('#permissions_table').closest('div.form-group').toggle(!isBasic);
+      $('#synonyms').closest('div.form-group').toggle(isVector || isRaster);
+      $('#abstract').closest('div.form-group').toggle(isVector || isRaster);
+      $('#keywords').closest('div.form-group').toggle(isVector || isRaster);
+      $('#in_wms').closest('div.form-group').toggle(isVector || isRaster);
+      $('#in_wfs').closest('div.form-group').toggle(isVector || isRaster);
+      $('#info_template').closest('div.form-group').toggle(isVector || isRaster);
+      $('#object_sheet').closest('div.form-group').toggle(isVector || isRaster);
+      $('#legend_file').closest('div.form-group').toggle(isVector || isRaster);
+      $('#remove_legend').closest('div.form-group').toggle(isVector || isRaster);
+      $('#qml_file').closest('div.form-group').toggle(isVector || isRaster);
+      $('#remove_qml').closest('div.form-group').toggle(isVector || isRaster);
+      $('#client_qml_file').closest('div.form-group').toggle(isVector || isRaster);
+      $('#remove_client_qml').closest('div.form-group').toggle(isVector || isRaster);
+      $('#transparency').closest('div.form-group').toggle(isVector || isRaster);
+      $('#searchable').closest('div.form-group').toggle(isVector || isRaster);
+      $('#facet').closest('div.form-group').toggle(isVector || isRaster);
+      $('#filter_word').closest('div.form-group').toggle(isVector || isRaster);
+
+      // toggle ows data set fields
+      $('#ows_data_source').closest('div.form-group').toggle(isOws);
+      $('#ows_service_layers').closest('div.form-group').toggle(isOws)
+
+      $('#feature_id_column').closest('div.form-group').toggle(!isOws);
 
       // toggle basic data set fields
       $('#basic_data_source').closest('div.form-group').toggle(isBasic);
       $('#basic_db_table').closest('div.form-group').toggle(isBasic);
+
+      $('#title').closest('div.form-group').toggle(!isBasic);
+      $('#permissions_table').closest('div.form-group').toggle(!isBasic);
     };
     $('#connection_type').change(toggleFields);
 
@@ -570,6 +581,10 @@
     {# generic data set #}
     {{ wtf.form_field(form.basic_data_source, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
     {{ wtf.form_field(form.basic_db_table, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+
+    {# ows data set #}
+    {{ wtf.form_field(form.ows_data_source, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
+    {{ wtf.form_field(form.ows_service_layers, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
 
     {{ wtf.form_field(form.searchable, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
     {{ wtf.form_field(form.facet, form_type="horizontal", horizontal_columns=('sm', 2, 5)) }}
