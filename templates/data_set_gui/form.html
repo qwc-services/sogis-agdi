@@ -69,7 +69,6 @@
       $('#synonyms').closest('div.form-group').toggle(isVector || isRaster);
       $('#abstract').closest('div.form-group').toggle(isVector || isRaster);
       $('#keywords').closest('div.form-group').toggle(isVector || isRaster);
-      $('#in_wms').closest('div.form-group').toggle(isVector || isRaster);
       $('#in_wfs').closest('div.form-group').toggle(isVector || isRaster);
       $('#info_template').closest('div.form-group').toggle(isVector || isRaster);
       $('#object_sheet').closest('div.form-group').toggle(isVector || isRaster);
@@ -95,6 +94,7 @@
       $('#basic_db_table').closest('div.form-group').toggle(isBasic);
 
       $('#title').closest('div.form-group').toggle(!isBasic);
+      $('#in_wms').closest('div.form-group').toggle(!isBasic);
       $('#permissions_table').closest('div.form-group').toggle(!isBasic);
     };
     $('#connection_type').change(toggleFields);
