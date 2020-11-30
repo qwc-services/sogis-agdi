@@ -9,6 +9,9 @@
       // clear alerts
       $('.flashed-messages').empty();
       $('#db_alerts').empty();
+
+      $('#update').prop("disabled", true);
+      $('#update').css("cursor", 'wait');
     });
   });
 </script>
