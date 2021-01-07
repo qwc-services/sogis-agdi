@@ -26,7 +26,6 @@
       }
       if (!isVector) {
         // reset vector field values
-        $('#abstract').val('');
         $('#data_source').val(0);
         $('#db_table').empty();
         $('#db_table_filter').val('');
@@ -51,6 +50,7 @@
       else {
         // title optional
         $('#title').removeAttr('required');
+        $('#abstract').val('');
       }
 
       // toggle vector fields
@@ -67,7 +67,6 @@
 
       // toggle vector and raster fields
       $('#synonyms').closest('div.form-group').toggle(isVector || isRaster);
-      $('#abstract').closest('div.form-group').toggle(isVector || isRaster);
       $('#keywords').closest('div.form-group').toggle(isVector || isRaster);
       $('#in_wfs').closest('div.form-group').toggle(isVector || isRaster);
       $('#info_template').closest('div.form-group').toggle(isVector || isRaster);
@@ -94,6 +93,7 @@
       $('#basic_db_table').closest('div.form-group').toggle(isBasic);
 
       $('#title').closest('div.form-group').toggle(!isBasic);
+      $('#abstract').closest('div.form-group').toggle(!isBasic);
       $('#in_wms').closest('div.form-group').toggle(!isBasic);
       $('#permissions_table').closest('div.form-group').toggle(!isBasic);
     };
