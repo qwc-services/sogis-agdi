@@ -1074,7 +1074,7 @@ class TemplatesController(Controller):
 
     def qpt_uploads_dir(self):
         """Return target dir for QPT uploads."""
-        return os.path.join(qgs_dir, self.UPLOADS_SUB_DIR)
+        return os.path.join(self.qgs_dir(), self.UPLOADS_SUB_DIR)
 
     def jasper_reports_dir(self):
         """Return target dir for JasperReports reports."""
