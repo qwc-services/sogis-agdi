@@ -868,11 +868,19 @@ class TemplatesController(Controller):
         # parse XML
         root = ElementTree.fromstring(template.qgs_print_layout)
 
-        # root is <Composer>
-        if root.get('title') != name:
-            # update composer name
-            root.set('title', name)
+        name_changed = False
 
+        # root is <Layout> or <Composer>
+        if root.tag == 'Layout' and root.get('name') != name:
+            # update layout name for QGIS 3
+            root.set('name', name)
+            name_changed = True
+        elif root.tag == 'Composer' and root.get('title') != name:
+            # update composer name for QGIS 2
+            root.set('title', name)
+            name_changed = True
+
+        if name_changed:
             # update QPT
             qpt_data = ElementTree.tostring(
                 root, encoding='utf-8', method='xml'
