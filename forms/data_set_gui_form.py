@@ -3,7 +3,7 @@ import re
 from flask_wtf import FlaskForm
 from werkzeug.datastructures import FileStorage
 from wtforms import *
-from wtforms.widgets.html5 import NumberInput
+from wtforms.widgets import NumberInput
 from wtforms.validators import DataRequired, Optional, Regexp, NumberRange,\
     InputRequired
 
