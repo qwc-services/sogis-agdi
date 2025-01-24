@@ -93,7 +93,7 @@ Set the `CONFIG_PATH` environment variable to the path containing the service co
 
 Start application:
 
-    CONFIG_PATH=../docker/volumes/config/ python server.py
+    CONFIG_PATH=../docker/volumes/config/ uv run server.py
 
 Admin GUI base URL:
 
