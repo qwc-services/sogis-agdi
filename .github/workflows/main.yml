@@ -27,3 +27,14 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           tags: "${{ steps.get_tag.outputs.tag }}"
+
+      - name: Build and publish qwc-base-db-migrate docker image
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        if: github.event_name != 'pull_request'
+        with:
+          name: sourcepole/sogis-gdiconfigdb-migrate
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          tags: "${{ steps.get_tag.outputs.tag }}"
+          workdir: .
+          dockerfile: Dockerfile.migrate
