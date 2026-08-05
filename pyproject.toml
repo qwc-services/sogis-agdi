@@ -1,6 +1,6 @@
 [project]
 name = "sogis-agdi"
-version = "v2025.01.24"
+version = "v2026.08.05"
 description = "AGDI configuration backend"
 readme = "README.md"
 requires-python = ">=3.10"
