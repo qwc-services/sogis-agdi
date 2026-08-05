@@ -1,12 +1,18 @@
 ARG BASE_TAG=latest
 FROM sourcepole/qwc-uwsgi-base:alpine-$BASE_TAG
 
-# Required for psychopg, --> https://github.com/psycopg/psycopg2/issues/684
-RUN apk add --no-cache --update postgresql-dev gcc python3-dev musl-dev
+WORKDIR /srv/qwc_service
+ADD pyproject.toml uv.lock ./
 
-# Workaround for "ImportError: cannot import name 'PackageFinder'"
-RUN wget https://bootstrap.pypa.io/get-pip.py && \
-    python3 get-pip.py pip
+# git: Required for pip with git repos
+# postgresql-dev g++ python3-dev: Required for psycopg2
+RUN \
+    apk add --no-cache --update --virtual runtime-deps postgresql-libs && \
+    apk add --no-cache --update --virtual build-deps git postgresql-dev g++ python3-dev && \
+    uv sync --frozen && \
+    uv cache clean && \
+    apk del build-deps
 
-ADD . /srv/qwc_service
-RUN pip3 install --no-cache-dir -r /srv/qwc_service/requirements.txt
+ADD src /srv/qwc_service/
+
+ENV SERVICE_MOUNTPOINT=/agdi
