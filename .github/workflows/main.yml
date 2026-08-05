@@ -35,3 +35,13 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_PASSWORD }}
           tags: "${{ steps.get_tag.outputs.tag }}"
           buildargs: BASE_TAG
+
+      - name: Build and publish sogis-gdiconfigdb-migrate docker image
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: sourcepole/sogis-gdiconfigdb-migrate
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+          tags: "${{ steps.get_tag.outputs.tag }}"
+          workdir: .
+          dockerfile: Dockerfile.migrate
