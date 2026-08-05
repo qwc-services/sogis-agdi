@@ -1,6 +1,5 @@
-# WSGI service environment
-
-FROM sourcepole/qwc-uwsgi-base:alpine-v2024.01.16
+ARG BASE_TAG=latest
+FROM sourcepole/qwc-uwsgi-base:alpine-$BASE_TAG
 
 # Required for psychopg, --> https://github.com/psycopg/psycopg2/issues/684
 RUN apk add --no-cache --update postgresql-dev gcc python3-dev musl-dev
